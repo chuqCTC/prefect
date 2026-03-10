@@ -137,7 +137,7 @@ from kubernetes_asyncio.client.models import (
     V1Secret,
 )
 from pydantic import Field, field_validator, model_validator
-from tenacity import retry, stop_after_attempt, wait_fixed, wait_random
+from tenacity import AsyncRetrying, stop_after_attempt, wait_fixed, wait_random
 from typing_extensions import Literal, Self
 
 import prefect
@@ -172,12 +172,6 @@ if TYPE_CHECKING:
 
 # Captures flow return type
 R = TypeVar("R")
-
-
-MAX_ATTEMPTS = 3
-RETRY_MIN_DELAY_SECONDS = 1
-RETRY_MIN_DELAY_JITTER_SECONDS = 0
-RETRY_MAX_DELAY_JITTER_SECONDS = 3
 
 
 def _get_default_job_manifest_template() -> Dict[str, Any]:
@@ -354,13 +348,39 @@ class KubernetesWorkerJobConfiguration(BaseJobConfiguration):
         """
         Generate a dictionary of labels for a flow run job.
         """
+        slugified_version = _slugify_label_value(prefect.__version__.split("+")[0])
         return {
             "prefect.io/flow-run-id": str(flow_run.id),
             "prefect.io/flow-run-name": flow_run.name,
-            "prefect.io/version": _slugify_label_value(
-                prefect.__version__.split("+")[0]
-            ),
+            "prefect.io/version": slugified_version,
+            "app.kubernetes.io/managed-by": "prefect",
+            "app.kubernetes.io/part-of": "prefect",
+            "app.kubernetes.io/version": slugified_version,
         }
+
+    @staticmethod
+    def _base_flow_labels(flow: "APIFlow | None") -> Dict[str, str]:
+        """
+        Generate a dictionary of labels for a flow run job, including standard
+        app.kubernetes.io labels.
+        """
+        labels = BaseJobConfiguration._base_flow_labels(flow)
+        if flow is not None:
+            labels["app.kubernetes.io/name"] = _slugify_label_value(flow.name)
+        return labels
+
+    @staticmethod
+    def _base_deployment_labels(
+        deployment: "DeploymentResponse | None",
+    ) -> Dict[str, str]:
+        """
+        Generate a dictionary of labels for a deployment, including standard
+        app.kubernetes.io labels.
+        """
+        labels = BaseJobConfiguration._base_deployment_labels(deployment)
+        if deployment is not None:
+            labels["app.kubernetes.io/name"] = _slugify_label_value(deployment.name)
+        return labels
 
     def get_environment_variable_value(self, name: str) -> str | None:
         """
@@ -818,6 +838,11 @@ class KubernetesWorker(
             job = await self._create_job(configuration, client)
 
             assert job, "Job should be created"
+            logger.info(
+                "Kubernetes job '%s' created in namespace '%s'",
+                job.metadata.name,
+                job.metadata.namespace,
+            )
             pid = f"{job.metadata.namespace}:{job.metadata.name}"
             # Indicate that the job has started
             if task_status is not None:
@@ -983,15 +1008,6 @@ class KubernetesWorker(
                 "env"
             ] = manifest_env
 
-    @retry(
-        stop=stop_after_attempt(MAX_ATTEMPTS),
-        wait=wait_fixed(RETRY_MIN_DELAY_SECONDS)
-        + wait_random(
-            RETRY_MIN_DELAY_JITTER_SECONDS,
-            RETRY_MAX_DELAY_JITTER_SECONDS,
-        ),
-        reraise=True,
-    )
     async def _create_job(
         self, configuration: KubernetesWorkerJobConfiguration, client: "ApiClient"
     ) -> "V1Job":
@@ -1034,10 +1050,21 @@ class KubernetesWorker(
 
         try:
             batch_client = BatchV1Api(client)
-            job = await batch_client.create_namespaced_job(
-                configuration.namespace,
-                configuration.job_manifest,
-            )
+            retry_settings = settings.worker.create_job_retry
+            async for attempt in AsyncRetrying(
+                stop=stop_after_attempt(retry_settings.max_retries),
+                wait=wait_fixed(retry_settings.delay_seconds)
+                + wait_random(
+                    retry_settings.jitter_min_seconds,
+                    retry_settings.jitter_max_seconds,
+                ),
+                reraise=True,
+            ):
+                with attempt:
+                    job = await batch_client.create_namespaced_job(
+                        configuration.namespace,
+                        configuration.job_manifest,
+                    )
         except kubernetes_asyncio.client.exceptions.ApiException as exc:
             # Parse the reason and message from the response if feasible
             message = ""
@@ -1046,11 +1073,39 @@ class KubernetesWorker(
             if exc.body and "message" in (body := json.loads(exc.body)):
                 message += ": " + body["message"]
 
+            if hint := self._get_k8s_error_hint(exc, configuration.namespace):
+                message += f". Hint: {hint}"
+
             raise InfrastructureError(
                 f"Unable to create Kubernetes job{message}"
             ) from exc
 
         return job
+
+    @staticmethod
+    def _get_k8s_error_hint(
+        exc: "kubernetes_asyncio.client.exceptions.ApiException",
+        namespace: str,
+    ) -> str | None:
+        status = exc.status
+        reason = (exc.reason or "").lower()
+        raw_body = exc.body or ""
+        body_str = (
+            raw_body.decode("utf-8", errors="replace")
+            if isinstance(raw_body, bytes)
+            else raw_body
+        ).lower()
+
+        if "quota" in body_str or "exceeded" in body_str:
+            return "Check the resource quotas for the namespace and ensure the job does not exceed them."
+
+        if status == 403 or "forbidden" in reason:
+            return "Check that your service account has the required RBAC permissions for this operation."
+
+        if status == 404 and namespace and namespace.lower() in body_str:
+            return f"Verify that the namespace '{namespace}' exists in the cluster."
+
+        return None
 
     async def _upsert_secret(
         self, name: str, value: str, namespace: str, client: "ApiClient"

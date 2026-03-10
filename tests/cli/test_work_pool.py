@@ -1,3 +1,4 @@
+import json
 import sys
 from pathlib import Path
 from unittest.mock import AsyncMock
@@ -5,7 +6,6 @@ from unittest.mock import AsyncMock
 import httpx
 import pytest
 import readchar
-from typer import Exit
 
 from prefect.client.orchestration import PrefectClient
 from prefect.client.schemas.actions import (
@@ -50,13 +50,9 @@ FAKE_DEFAULT_BASE_JOB_TEMPLATE = {
 
 @pytest.fixture
 def interactive_console(monkeypatch):
-    monkeypatch.setattr("prefect.cli.work_pool.is_interactive", lambda: True)
-    try:
-        import prefect.cli._cyclopts as _cyclopts_mod
+    import prefect.cli._app as _app_mod
 
-        monkeypatch.setattr(_cyclopts_mod, "is_interactive", lambda: True)
-    except ImportError:
-        pass
+    monkeypatch.setattr(_app_mod, "is_interactive", lambda: True)
 
     # `readchar` does not like the fake stdin provided by typer isolation so we provide
     # a version that does not require a fd to be attached
@@ -65,7 +61,7 @@ def interactive_console(monkeypatch):
         position = sys.stdin.tell()
         if not sys.stdin.read():
             print("TEST ERROR: CLI is attempting to read input but stdin is empty.")
-            raise Exit(-2)
+            raise SystemExit(-2)
         else:
             sys.stdin.seek(position)
         return sys.stdin.read(1)
@@ -622,6 +618,43 @@ class TestLS:
         )
         assert "None" not in res.output
 
+    async def test_ls_json_output(self, prefect_client, work_pool):
+        """Test work-pool ls command with JSON output flag."""
+
+        res = await run_sync_in_worker_thread(
+            invoke_and_assert,
+            command=["work-pool", "ls", "-o", "json"],
+        )
+        assert res.exit_code == 0
+
+        output_data = json.loads(res.stdout.strip())
+        assert isinstance(output_data, list)
+        assert len(output_data) >= 1
+
+        output_ids = {item["id"] for item in output_data}
+        assert str(work_pool.id) in output_ids
+
+    async def test_ls_json_output_empty(self, prefect_client):
+        """Test work-pool ls with JSON output when no work pools exist."""
+
+        res = await run_sync_in_worker_thread(
+            invoke_and_assert,
+            command=["work-pool", "ls", "-o", "json"],
+        )
+        assert res.exit_code == 0
+
+        output_data = json.loads(res.stdout.strip())
+        assert output_data == []
+
+    async def test_ls_invalid_output_format(self, prefect_client, work_pool):
+        """Test work-pool ls with invalid output format."""
+        await run_sync_in_worker_thread(
+            invoke_and_assert,
+            command=["work-pool", "ls", "-o", "xml"],
+            expected_code=1,
+            expected_output_contains="Only 'json' output format is supported.",
+        )
+
 
 class TestUpdate:
     async def test_update_description(self, prefect_client, work_pool):
@@ -798,6 +831,34 @@ class TestPreview:
             f"work-pool preview {work_pool.name}",
         )
         assert res.exit_code == 0
+
+    async def test_preview_json_output(self, prefect_client, work_pool):
+        result = await run_sync_in_worker_thread(
+            invoke_and_assert,
+            command=["work-pool", "preview", work_pool.name, "--output", "json"],
+            expected_code=0,
+        )
+
+        payload = json.loads(result.stdout)
+        assert isinstance(payload, list)
+
+    async def test_preview_json_output_short_flag(self, prefect_client, work_pool):
+        result = await run_sync_in_worker_thread(
+            invoke_and_assert,
+            command=["work-pool", "preview", work_pool.name, "-o", "json"],
+            expected_code=0,
+        )
+
+        payload = json.loads(result.stdout)
+        assert isinstance(payload, list)
+
+    async def test_preview_invalid_output_format(self, prefect_client, work_pool):
+        await run_sync_in_worker_thread(
+            invoke_and_assert,
+            command=["work-pool", "preview", work_pool.name, "--output", "xml"],
+            expected_code=1,
+            expected_output_contains="Only 'json' output format is supported.",
+        )
 
 
 class TestGetDefaultBaseJobTemplate:

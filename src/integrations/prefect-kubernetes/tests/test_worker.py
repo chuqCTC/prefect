@@ -302,6 +302,12 @@ from_template_and_values_cases = [
                     "prefect.io/worker-name": worker_name,
                     "prefect.io/work-pool-name": work_pool.name,
                     "prefect.io/work-pool-id": str(work_pool.id),
+                    "app.kubernetes.io/managed-by": "prefect",
+                    "app.kubernetes.io/part-of": "prefect",
+                    "app.kubernetes.io/version": _slugify_label_value(
+                        prefect.__version__.split("+")[0]
+                    ),
+                    "app.kubernetes.io/name": _slugify_label_value(deployment.name),
                 },
                 name=flow_run.name,
                 namespace="default",
@@ -324,6 +330,14 @@ from_template_and_values_cases = [
                             "prefect.io/worker-name": worker_name,
                             "prefect.io/work-pool-name": work_pool.name,
                             "prefect.io/work-pool-id": str(work_pool.id),
+                            "app.kubernetes.io/managed-by": "prefect",
+                            "app.kubernetes.io/part-of": "prefect",
+                            "app.kubernetes.io/version": _slugify_label_value(
+                                prefect.__version__.split("+")[0]
+                            ),
+                            "app.kubernetes.io/name": _slugify_label_value(
+                                deployment.name
+                            ),
                         },
                     },
                     "spec": {
@@ -343,6 +357,14 @@ from_template_and_values_cases = [
                                     "prefect.io/worker-name": worker_name,
                                     "prefect.io/work-pool-name": work_pool.name,
                                     "prefect.io/work-pool-id": str(work_pool.id),
+                                    "app.kubernetes.io/managed-by": "prefect",
+                                    "app.kubernetes.io/part-of": "prefect",
+                                    "app.kubernetes.io/version": _slugify_label_value(
+                                        prefect.__version__.split("+")[0]
+                                    ),
+                                    "app.kubernetes.io/name": _slugify_label_value(
+                                        deployment.name
+                                    ),
                                 },
                             },
                             "spec": {
@@ -633,6 +655,12 @@ from_template_and_values_cases = [
                     "prefect.io/worker-name": worker_name,
                     "prefect.io/work-pool-name": work_pool.name,
                     "prefect.io/work-pool-id": str(work_pool.id),
+                    "app.kubernetes.io/managed-by": "prefect",
+                    "app.kubernetes.io/part-of": "prefect",
+                    "app.kubernetes.io/version": _slugify_label_value(
+                        prefect.__version__.split("+")[0]
+                    ),
+                    "app.kubernetes.io/name": _slugify_label_value(deployment.name),
                 },
                 name=flow_run.name,
                 namespace="default",
@@ -655,6 +683,14 @@ from_template_and_values_cases = [
                             "prefect.io/worker-name": worker_name,
                             "prefect.io/work-pool-name": work_pool.name,
                             "prefect.io/work-pool-id": str(work_pool.id),
+                            "app.kubernetes.io/managed-by": "prefect",
+                            "app.kubernetes.io/part-of": "prefect",
+                            "app.kubernetes.io/version": _slugify_label_value(
+                                prefect.__version__.split("+")[0]
+                            ),
+                            "app.kubernetes.io/name": _slugify_label_value(
+                                deployment.name
+                            ),
                         },
                     },
                     "spec": {
@@ -674,6 +710,14 @@ from_template_and_values_cases = [
                                     "prefect.io/worker-name": worker_name,
                                     "prefect.io/work-pool-name": work_pool.name,
                                     "prefect.io/work-pool-id": str(work_pool.id),
+                                    "app.kubernetes.io/managed-by": "prefect",
+                                    "app.kubernetes.io/part-of": "prefect",
+                                    "app.kubernetes.io/version": _slugify_label_value(
+                                        prefect.__version__.split("+")[0]
+                                    ),
+                                    "app.kubernetes.io/name": _slugify_label_value(
+                                        deployment.name
+                                    ),
                                 },
                             },
                             "spec": {
@@ -838,6 +882,12 @@ from_template_and_values_cases = [
                     "prefect.io/work-pool-name": work_pool.name,
                     "prefect.io/work-pool-id": str(work_pool.id),
                     "TEST_LABEL": "test label",
+                    "app.kubernetes.io/managed-by": "prefect",
+                    "app.kubernetes.io/part-of": "prefect",
+                    "app.kubernetes.io/version": _slugify_label_value(
+                        prefect.__version__.split("+")[0]
+                    ),
+                    "app.kubernetes.io/name": _slugify_label_value(deployment.name),
                 },
                 name="test",
                 namespace="test-namespace",
@@ -861,6 +911,14 @@ from_template_and_values_cases = [
                             "prefect.io/work-pool-name": work_pool.name,
                             "prefect.io/work-pool-id": str(work_pool.id),
                             "test_label": "test-label",
+                            "app.kubernetes.io/managed-by": "prefect",
+                            "app.kubernetes.io/part-of": "prefect",
+                            "app.kubernetes.io/version": _slugify_label_value(
+                                prefect.__version__.split("+")[0]
+                            ),
+                            "app.kubernetes.io/name": _slugify_label_value(
+                                deployment.name
+                            ),
                         },
                     },
                     "spec": {
@@ -882,6 +940,14 @@ from_template_and_values_cases = [
                                     "prefect.io/work-pool-name": work_pool.name,
                                     "prefect.io/work-pool-id": str(work_pool.id),
                                     "test_label": "test-label",
+                                    "app.kubernetes.io/managed-by": "prefect",
+                                    "app.kubernetes.io/part-of": "prefect",
+                                    "app.kubernetes.io/version": _slugify_label_value(
+                                        prefect.__version__.split("+")[0]
+                                    ),
+                                    "app.kubernetes.io/name": _slugify_label_value(
+                                        deployment.name
+                                    ),
                                 },
                             },
                             "spec": {
@@ -1172,6 +1238,12 @@ from_template_and_values_cases = [
                     "prefect.io/work-pool-name": work_pool.name,
                     "prefect.io/work-pool-id": str(work_pool.id),
                     "TEST_LABEL": "test label",
+                    "app.kubernetes.io/managed-by": "prefect",
+                    "app.kubernetes.io/part-of": "prefect",
+                    "app.kubernetes.io/version": _slugify_label_value(
+                        prefect.__version__.split("+")[0]
+                    ),
+                    "app.kubernetes.io/name": _slugify_label_value(deployment.name),
                 },
                 name="test",
                 namespace="default",
@@ -1195,6 +1267,14 @@ from_template_and_values_cases = [
                             "prefect.io/work-pool-name": work_pool.name,
                             "prefect.io/work-pool-id": str(work_pool.id),
                             "test_label": "test-label",
+                            "app.kubernetes.io/managed-by": "prefect",
+                            "app.kubernetes.io/part-of": "prefect",
+                            "app.kubernetes.io/version": _slugify_label_value(
+                                prefect.__version__.split("+")[0]
+                            ),
+                            "app.kubernetes.io/name": _slugify_label_value(
+                                deployment.name
+                            ),
                         },
                     },
                     "spec": {
@@ -1216,6 +1296,14 @@ from_template_and_values_cases = [
                                     "prefect.io/work-pool-id": str(work_pool.id),
                                     "test_label": "test-label",
                                     "label_from_template": "label-from-template",
+                                    "app.kubernetes.io/managed-by": "prefect",
+                                    "app.kubernetes.io/part-of": "prefect",
+                                    "app.kubernetes.io/version": _slugify_label_value(
+                                        prefect.__version__.split("+")[0]
+                                    ),
+                                    "app.kubernetes.io/name": _slugify_label_value(
+                                        deployment.name
+                                    ),
                                 },
                             },
                             "spec": {
@@ -2140,7 +2228,7 @@ class TestKubernetesWorker:
                     "Unable to create Kubernetes job: Forbidden: jobs.batch is forbidden: User "
                     '"system:serviceaccount:helm-test:prefect-worker-dev" cannot '
                     'create resource "jobs" in API group "batch" in the namespace '
-                    '"prefect"'
+                    '"prefect". Hint: Check that your service account has the required RBAC permissions for this operation.'
                 ),
             ):
                 await k8s_worker.run(flow_run, configuration)
@@ -2152,7 +2240,7 @@ class TestKubernetesWorker:
         mock_watch,
         mock_batch_client,
     ):
-        MAX_ATTEMPTS = 3
+        max_retries = 3
         response = MagicMock()
         response.data = json.dumps(
             {
@@ -2183,14 +2271,80 @@ class TestKubernetesWorker:
                     "Unable to create Kubernetes job: Forbidden: jobs.batch is forbidden: User "
                     '"system:serviceaccount:helm-test:prefect-worker-dev" cannot '
                     'create resource "jobs" in API group "batch" in the namespace '
-                    '"prefect"'
+                    '"prefect". Hint: Check that your service account has the required RBAC permissions for this operation.'
                 ),
             ):
                 await k8s_worker.run(flow_run, configuration)
 
         assert (
             mock_batch_client.return_value.create_namespaced_job.call_count
-            == MAX_ATTEMPTS
+            == max_retries
+        )
+
+    async def test_create_job_retries_custom_settings(
+        self,
+        flow_run,
+        mock_core_client,
+        mock_watch,
+        mock_batch_client,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        custom_max_retries = 5
+        monkeypatch.setenv(
+            "PREFECT_INTEGRATIONS_KUBERNETES_WORKER_CREATE_JOB_RETRY_MAX_RETRIES",
+            str(custom_max_retries),
+        )
+        monkeypatch.setenv(
+            "PREFECT_INTEGRATIONS_KUBERNETES_WORKER_CREATE_JOB_RETRY_DELAY_SECONDS",
+            "0",
+        )
+        monkeypatch.setenv(
+            "PREFECT_INTEGRATIONS_KUBERNETES_WORKER_CREATE_JOB_RETRY_JITTER_MIN_SECONDS",
+            "0",
+        )
+        monkeypatch.setenv(
+            "PREFECT_INTEGRATIONS_KUBERNETES_WORKER_CREATE_JOB_RETRY_JITTER_MAX_SECONDS",
+            "0",
+        )
+
+        response = MagicMock()
+        response.data = json.dumps(
+            {
+                "kind": "Status",
+                "apiVersion": "v1",
+                "metadata": {},
+                "status": "Failure",
+                "message": 'jobs.batch is forbidden: User "system:serviceaccount:helm-test:prefect-worker-dev" cannot create resource "jobs" in API group "batch" in the namespace "prefect"',
+                "reason": "Forbidden",
+                "details": {"group": "batch", "kind": "jobs"},
+                "code": 403,
+            }
+        )
+        response.status = 403
+        response.reason = "Forbidden"
+
+        mock_batch_client.return_value.create_namespaced_job.side_effect = ApiException(
+            http_resp=response
+        )
+
+        configuration = await KubernetesWorkerJobConfiguration.from_template_and_values(
+            KubernetesWorker.get_default_base_job_template(), {"image": "foo"}
+        )
+        async with KubernetesWorker(work_pool_name="test") as k8s_worker:
+            with pytest.raises(
+                InfrastructureError,
+                match=re.escape(
+                    "Unable to create Kubernetes job: Forbidden: jobs.batch is forbidden: User "
+                    '"system:serviceaccount:helm-test:prefect-worker-dev" cannot '
+                    'create resource "jobs" in API group "batch" in the namespace '
+                    '"prefect". Hint: Check that your service account has the required RBAC permissions for this operation.'
+                ),
+            ):
+                await k8s_worker.run(flow_run, configuration)
+
+        assert (
+            mock_batch_client.return_value.create_namespaced_job.call_count
+            == custom_max_retries
         )
 
     async def test_create_job_failure_no_reason(
@@ -2230,7 +2384,7 @@ class TestKubernetesWorker:
                     "Unable to create Kubernetes job: jobs.batch is forbidden: User "
                     '"system:serviceaccount:helm-test:prefect-worker-dev" cannot '
                     'create resource "jobs" in API group "batch" in the namespace '
-                    '"prefect"'
+                    '"prefect". Hint: Check that your service account has the required RBAC permissions for this operation.'
                 ),
             ):
                 await k8s_worker.run(flow_run, configuration)
@@ -2267,7 +2421,10 @@ class TestKubernetesWorker:
         async with KubernetesWorker(work_pool_name="test") as k8s_worker:
             with pytest.raises(
                 InfrastructureError,
-                match=re.escape("Unable to create Kubernetes job: Test"),
+                match=re.escape(
+                    "Unable to create Kubernetes job: Test."
+                    " Hint: Check that your service account has the required RBAC permissions for this operation."
+                ),
             ):
                 await k8s_worker.run(flow_run, configuration)
 
@@ -2293,7 +2450,87 @@ class TestKubernetesWorker:
         async with KubernetesWorker(work_pool_name="test") as k8s_worker:
             with pytest.raises(
                 InfrastructureError,
-                match=re.escape("Unable to create Kubernetes job: Test"),
+                match=re.escape(
+                    "Unable to create Kubernetes job: Test."
+                    " Hint: Check that your service account has the required RBAC permissions for this operation."
+                ),
+            ):
+                await k8s_worker.run(flow_run, configuration)
+
+    async def test_create_job_failure_404_namespace_hint(
+        self,
+        flow_run,
+        mock_core_client,
+        mock_watch,
+        mock_batch_client,
+    ):
+        response = MagicMock()
+        response.data = json.dumps(
+            {
+                "kind": "Status",
+                "apiVersion": "v1",
+                "metadata": {},
+                "status": "Failure",
+                "message": 'namespaces "nonexistent-ns" not found',
+                "reason": "NotFound",
+                "code": 404,
+            }
+        )
+        response.status = 404
+        response.reason = "Not Found"
+
+        mock_batch_client.return_value.create_namespaced_job.side_effect = ApiException(
+            http_resp=response
+        )
+
+        configuration = await KubernetesWorkerJobConfiguration.from_template_and_values(
+            KubernetesWorker.get_default_base_job_template(),
+            {"image": "foo", "namespace": "nonexistent-ns"},
+        )
+        async with KubernetesWorker(work_pool_name="test") as k8s_worker:
+            with pytest.raises(
+                InfrastructureError,
+                match=re.escape(
+                    "Hint: Verify that the namespace 'nonexistent-ns' exists in the cluster."
+                ),
+            ):
+                await k8s_worker.run(flow_run, configuration)
+
+    async def test_create_job_failure_quota_exceeded_hint(
+        self,
+        flow_run,
+        mock_core_client,
+        mock_watch,
+        mock_batch_client,
+    ):
+        response = MagicMock()
+        response.data = json.dumps(
+            {
+                "kind": "Status",
+                "apiVersion": "v1",
+                "metadata": {},
+                "status": "Failure",
+                "message": "exceeded quota: resource-quota, requested: cpu=2, limited: cpu=1",
+                "reason": "Forbidden",
+                "code": 403,
+            }
+        )
+        response.status = 403
+        response.reason = "Forbidden"
+
+        mock_batch_client.return_value.create_namespaced_job.side_effect = ApiException(
+            http_resp=response
+        )
+
+        configuration = await KubernetesWorkerJobConfiguration.from_template_and_values(
+            KubernetesWorker.get_default_base_job_template(), {"image": "foo"}
+        )
+        async with KubernetesWorker(work_pool_name="test") as k8s_worker:
+            with pytest.raises(
+                InfrastructureError,
+                match=re.escape(
+                    "Hint: Check the resource quotas for the namespace and ensure the job does not exceed them."
+                ),
             ):
                 await k8s_worker.run(flow_run, configuration)
 

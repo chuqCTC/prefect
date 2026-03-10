@@ -1,6 +1,8 @@
+import { useNavigate } from "@tanstack/react-router";
 import type { OnChangeFn, SortingState } from "@tanstack/react-table";
 import {
 	getCoreRowModel,
+	getPaginationRowModel,
 	getSortedRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
@@ -33,6 +35,7 @@ export const WorkPoolQueuesTable = ({
 	onSearchChange,
 	onSortingChange,
 }: WorkPoolQueuesTableProps) => {
+	const navigate = useNavigate();
 	const handleSortingChange: OnChangeFn<SortingState> = useCallback(
 		(updater) => {
 			const newSorting =
@@ -53,6 +56,7 @@ export const WorkPoolQueuesTable = ({
 		columns,
 		// Core features
 		getCoreRowModel: getCoreRowModel(),
+		getPaginationRowModel: getPaginationRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		state: {
 			sorting: sortState,
@@ -60,6 +64,7 @@ export const WorkPoolQueuesTable = ({
 		onSortingChange: handleSortingChange,
 		initialState: {
 			sorting: [{ id: "name", desc: false }],
+			pagination: { pageIndex: 0, pageSize: 10 },
 		},
 	});
 
@@ -80,7 +85,18 @@ export const WorkPoolQueuesTable = ({
 					workPoolName={workPoolName}
 				/>
 			) : (
-				<DataTable table={table} />
+				<DataTable
+					table={table}
+					onRowClick={(row) =>
+						void navigate({
+							to: "/work-pools/work-pool/$workPoolName/queue/$workQueueName",
+							params: {
+								workPoolName: row.work_pool_name || "",
+								workQueueName: row.name,
+							},
+						})
+					}
+				/>
 			)}
 		</div>
 	);

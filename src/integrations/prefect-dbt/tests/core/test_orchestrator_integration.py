@@ -18,6 +18,7 @@ pytest.importorskip(
 )
 
 from prefect_dbt.core._orchestrator import (  # noqa: E402
+    CacheConfig,
     ExecutionMode,
     PrefectDbtOrchestrator,
     TestStrategy,
@@ -414,7 +415,7 @@ def per_node_orchestrator(per_node_dbt_project):
 def caching_orchestrator(per_node_dbt_project, tmp_path):
     """Factory fixture for PER_NODE orchestrator with caching enabled.
 
-    Shares result_storage and cache_key_storage across calls so
+    Shares result_storage and key_storage across calls so
     cross-instance cache tests can verify persistence.
 
     Uses ThreadPoolTaskRunner to avoid ProcessPoolTaskRunner limitations
@@ -437,9 +438,10 @@ def caching_orchestrator(per_node_dbt_project, tmp_path):
             "manifest_path": per_node_dbt_project["manifest_path"],
             "execution_mode": ExecutionMode.PER_NODE,
             "concurrency": 1,
-            "enable_caching": True,
-            "result_storage": result_dir,
-            "cache_key_storage": str(key_dir),
+            "cache": CacheConfig(
+                result_storage=result_dir,
+                key_storage=str(key_dir),
+            ),
             "task_runner_type": ThreadPoolTaskRunner,
             "test_strategy": TestStrategy.SKIP,
         }
@@ -728,7 +730,7 @@ class TestPerNodeCachingIntegration:
 
         # Run 2: should be entirely cached
         r2 = run()
-        assert all(r["status"] == "success" for r in r2.values())
+        assert all(r["status"] == "cached" for r in r2.values())
 
         # customer_summary was NOT recreated → dbt never re-executed it
         assert not _object_exists(db_path, "customer_summary")
@@ -778,7 +780,7 @@ class TestPerNodeCachingIntegration:
         # Run 2: stg_customers cache miss (file changed) propagates to
         # customer_summary cache miss (upstream key changed) → re-executed
         r2 = run()
-        assert all(r["status"] == "success" for r in r2.values())
+        assert all(r["status"] in ("success", "cached") for r in r2.values())
 
         # customer_summary was re-created → cascade invalidation worked
         assert _object_exists(db_path, "customer_summary")
@@ -842,7 +844,7 @@ class TestPerNodeCachingIntegration:
             return orch2.run_build()
 
         r2 = run2()
-        assert all(r["status"] == "success" for r in r2.values())
+        assert all(r["status"] == "cached" for r in r2.values())
 
         # customer_summary was NOT recreated → orch2 used orch1's cache
         assert not _object_exists(db_path, "customer_summary")
@@ -850,10 +852,10 @@ class TestPerNodeCachingIntegration:
     def test_caching_disabled_executes_every_time(
         self, caching_orchestrator, per_node_dbt_project
     ):
-        """With enable_caching=False, every run re-executes all nodes."""
+        """With cache=None, every run re-executes all nodes."""
         from prefect import flow
 
-        orch = caching_orchestrator(enable_caching=False)
+        orch = caching_orchestrator(cache=None)
         db_path = per_node_dbt_project["project_dir"] / "warehouse.duckdb"
 
         @flow
@@ -930,7 +932,7 @@ class TestPerNodeCachingIntegration:
 
         # Run 3: normal build — should hit Run 1's cache
         r3 = run()
-        assert all(r["status"] == "success" for r in r3.values())
+        assert all(r["status"] == "cached" for r in r3.values())
 
         # customer_summary was NOT recreated — Run 1's cache was used
         assert not _object_exists(db_path, "customer_summary")
@@ -969,7 +971,7 @@ class TestPerNodeCachingIntegration:
 
         # Run 2: macro hash changed → customer_summary must re-execute
         r2 = run()
-        assert all(r["status"] == "success" for r in r2.values())
+        assert all(r["status"] in ("success", "cached") for r in r2.values())
 
         # customer_summary was recreated — macro change invalidated cache
         assert _object_exists(db_path, "customer_summary")

@@ -1,3 +1,4 @@
+import json
 import sys
 import urllib.parse
 import uuid
@@ -11,7 +12,7 @@ import readchar
 import respx
 from starlette import status
 
-from prefect.cli.cloud import LoginFailed, LoginSuccess
+from prefect.cli._cloud_utils import LoginFailed, LoginSuccess
 from prefect.client.schemas import Workspace
 from prefect.context import get_settings_context, use_profile
 from prefect.logging.configuration import setup_logging
@@ -44,15 +45,9 @@ def gen_test_workspace(**kwargs: Any) -> Workspace:
 
 @pytest.fixture
 def interactive_console(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr("prefect.cli.cloud.is_interactive", lambda: True)
+    import prefect.cli._app as _cli
 
-    # Also patch cyclopts module for dual-mode parity
-    try:
-        import prefect.cli._cyclopts as _cli
-
-        monkeypatch.setattr(_cli, "is_interactive", lambda: True)
-    except ImportError:
-        pass
+    monkeypatch.setattr(_cli, "is_interactive", lambda: True)
 
     # `readchar` does not like the fake stdin provided by typer isolation so we provide
     # a version that does not require a fd to be attached
@@ -507,7 +502,8 @@ def test_login_with_browser_single_workspace(
         # Bypass the mocks
         respx_mock.route(url__startswith=callback).pass_through()
         httpx.post(
-            callback + "/success", content=LoginSuccess(api_key="foo").model_dump_json()
+            callback + "/success",
+            json=LoginSuccess(api_key="foo").model_dump(mode="json"),
         )
 
     mock_webbrowser.open_new_tab.side_effect = post_success
@@ -548,7 +544,7 @@ def test_login_with_browser_failure_in_browser(
         respx_mock.route(url__startswith=callback).pass_through()
         httpx.post(
             callback + "/failure",
-            content=LoginFailed(reason="Oh no!").model_dump_json(),
+            json=LoginFailed(reason="Oh no!").model_dump(mode="json"),
         )
 
     mock_webbrowser.open_new_tab.side_effect = post_failure
@@ -1197,6 +1193,29 @@ class TestCloudWorkspaceLs:
                 "* test1/foo",
                 "test2/bar",
             ],
+        )
+
+    @pytest.mark.parametrize("flag", ["--output", "-o"])
+    def test_ls_json_output(
+        self, workspaces: tuple[Workspace, Workspace], flag: str
+    ) -> None:
+        foo_workspace, bar_workspace = workspaces
+        result = invoke_and_assert(
+            ["cloud", "workspace", "ls", flag, "json"],
+            expected_code=0,
+        )
+
+        payload = json.loads(result.stdout)
+        assert [
+            f"{workspace['account_handle']}/{workspace['workspace_handle']}"
+            for workspace in payload
+        ] == sorted([foo_workspace.handle, bar_workspace.handle])
+
+    def test_ls_invalid_output_format(self) -> None:
+        invoke_and_assert(
+            ["cloud", "workspace", "ls", "--output", "xml"],
+            expected_code=1,
+            expected_output_contains="Only 'json' output format is supported.",
         )
 
     def test_ls_without_active_workspace(self, workspaces: tuple[Workspace, Workspace]):
